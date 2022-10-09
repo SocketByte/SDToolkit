@@ -62,7 +62,13 @@ namespace SDToolkit
 
         private static void Run(GeneratorConfig config)
         {
-            Directory.Delete(WorkingDirectory + "\\stable-diffusion\\outputs\\txt2img-samples", true);
+            var samplesDir = WorkingDirectory + "\\stable-diffusion\\outputs\\txt2img-samples";
+            if (Directory.Exists(samplesDir))
+            {
+                Directory.Delete(samplesDir, true);
+            }
+
+            var path = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
 
             config.GenerateButton.Invoke(new MethodInvoker(delegate ()
             {
@@ -89,7 +95,8 @@ namespace SDToolkit
                 var prompt = config.Prompt;
                 var converted = string.Join("_", prompt.Split(' '));
 
-                var images = Directory.GetFiles(WorkingDirectory + @"\stable-diffusion\outputs\txt2img-samples\" + converted, "*.png");
+                var dir = Directory.GetDirectories(WorkingDirectory + @"\stable-diffusion\outputs\txt2img-samples\")[0];
+                var images = Directory.GetFiles(dir, "*.png");
 
                 config.GenerateButton.Invoke(new MethodInvoker(delegate ()
                 {

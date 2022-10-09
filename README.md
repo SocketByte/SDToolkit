@@ -3,6 +3,7 @@
 All in one, batteries-included software to easily generate and upscale AI art using [Stable Diffusion](https://github.com/CompVis/stable-diffusion).
 
 ![Image](https://i.imgur.com/EyjdVXj.png)
+![Image](https://i.imgur.com/kB3mL6e.png)
 
 ## Requirements / Info
 
