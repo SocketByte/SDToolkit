@@ -10,26 +10,28 @@ using System.Windows.Forms;
 
 namespace SDToolkit
 {
-    class Upscaler
+    class FaceRestoration
     {
-        private static string GetUpscalingAlgorithm(string algorithm)
-        {
-            switch (algorithm)
-            {
-                case "RealSR": return "realsr_ncnn_vulkan";
-                case "SRMD": return "srmd_ncnn_vulkan";
-                case "Waifu2x": return "waifu2x_ncnn_vulkan";
-            }
-            return "realsr_ncnn_vulkan";
-        }
-
-        public static void Upscale(Generator.GeneratorConfig config, string[] images)
+        public static void RestoreWithGFPGAN(Generator.GeneratorConfig config, string[] images)
         {
             var outputNames = new string[images.Length];
             for (var i = 0; i < images.Length; i++)
             {
                 outputNames[i] = DateTimeOffset.Now.ToUnixTimeSeconds().ToString() + "_" + i + ".png";
             }
+
+            var inputs = "GFPGAN\\inputs\\temp";
+            if (Directory.Exists(inputs))
+            {
+                Directory.Delete(inputs, true);
+            }
+            Directory.CreateDirectory(inputs);
+            for (var i = 0; i < images.Length; i++)
+            {
+                var image = images[i];
+                File.Copy(image, inputs + "\\" + outputNames[i]);
+            }
+            
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -51,15 +53,28 @@ namespace SDToolkit
                 {
                     config.GenerateButton.Invoke(new MethodInvoker(delegate ()
                     {
+                        if (config.UseGFPGANandVideo2x)
+                        {
+                            config.GenerateButton.Invoke(new MethodInvoker(delegate ()
+                            {
+                                config.GenerateButton.Text = "Upscaling with Video2x...";
+                                config.DebugTextBox.Clear();
+                            }));
+
+                            Upscaler.Upscale(config, images);
+                            return;
+                        }
+
                         for (var i = 0; i < images.Length; i++)
                         {
+                            var image = images[i];
                             var pictureBox = config.PictureBoxes[i];
-                            pictureBox.Image = Image.FromFile("video2x\\outputs\\" + outputNames[i]);
+                            pictureBox.Image = Image.FromFile("GFPGAN\\results\\restored_imgs\\" + outputNames[i]);
                         }
                         config.GenerateButton.Text = "Generate";
 
                         config.GenerateButton.Enabled = true;
-  
+
                         config.DebugTextBox.Clear();
                         config.ProgressBar.Value = 0;
                     }));
@@ -68,10 +83,12 @@ namespace SDToolkit
 
             process.OutputDataReceived += (s, e) =>
             {
+                Console.WriteLine(e.Data);
                 Generator.PrintToDebug(config.DebugTextBox, e.Data);
             };
             process.ErrorDataReceived += (s, e) =>
             {
+                Console.WriteLine(e.Data);
                 Generator.PrintToDebug(config.DebugTextBox, e.Data);
             };
             process.Start();
@@ -82,20 +99,15 @@ namespace SDToolkit
             {
                 if (sw.BaseStream.CanWrite)
                 {
-                    sw.WriteLine("cd video2x");
-                    for (var i = 0; i < images.Length; i++)
+                    var scale = config.Upscale;
+                    if (config.UseGFPGANandVideo2x)
                     {
-                        var scale = config.UseGFPGANandVideo2x ? config.Upscale / 2 : config.Upscale;
-                        var res = config.ResHeight * scale;
-                        
-                        var image = images[i];
-                        sw.WriteLine(".\\video2x.exe -i " + image 
-                            + " -o outputs\\" + outputNames[i] 
-                            + " -h " + res
-                            + " -w " + res
-                            + " -d realsr_ncnn_vulkan"
-                            + " -p 3");
+                        scale = 2;
                     }
+                    sw.WriteLine("conda\\Scripts\\activate.bat");
+                    sw.WriteLine("activate");
+                    sw.WriteLine("cd GFPGAN");
+                    sw.WriteLine("python inference_gfpgan.py -i inputs/temp -o results -v 1.3 -s " + scale);
                 }
             }
         }

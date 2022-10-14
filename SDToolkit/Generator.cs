@@ -15,6 +15,8 @@ namespace SDToolkit
     {
         public static readonly string WorkingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
+        public delegate void OnEnd();
+
         public class GeneratorConfig
         {
             public string Prompt { get; set; }
@@ -22,10 +24,21 @@ namespace SDToolkit
             public int ResWidth { get; set; }
             public int Seed { get; set; }
             public int Steps { get; set; }
-            public string UpscalingAlgorithm { get; set; }
             public string Precision { get; set; }
+            public int Upscale { get; set; }
+            public bool UseContextImage { get; set; }
+
+            public string ContextImage { get; set; }
 
             public bool UseTurbo { get; set; }
+
+            public bool UseGFPGAN { get; set; }
+
+            public bool UseGFPGANandVideo2x { get; set; }
+
+            public string Sampler { get; set; }
+
+            public OnEnd OnEnd { get; set; }
 
             public TextBox DebugTextBox { get; set; } 
             public ProgressBar ProgressBar { get; set; }
@@ -62,7 +75,8 @@ namespace SDToolkit
 
         private static void Run(GeneratorConfig config)
         {
-            var samplesDir = WorkingDirectory + "\\stable-diffusion\\outputs\\txt2img-samples";
+            var samples = config.UseContextImage ? "img2img-samples" : "txt2img-samples";
+            var samplesDir = WorkingDirectory + "\\stable-diffusion\\outputs\\" + samples;
             if (Directory.Exists(samplesDir))
             {
                 Directory.Delete(samplesDir, true);
@@ -92,28 +106,50 @@ namespace SDToolkit
 
             process.Exited += (s, e) =>
             {
-                var prompt = config.Prompt;
-                var converted = string.Join("_", prompt.Split(' '));
-
-                var dir = Directory.GetDirectories(WorkingDirectory + @"\stable-diffusion\outputs\txt2img-samples\")[0];
-                var images = Directory.GetFiles(dir, "*.png");
-
-                config.GenerateButton.Invoke(new MethodInvoker(delegate ()
+                try
                 {
-                    config.GenerateButton.Text = "Upscaling...";
-                    config.DebugTextBox.Clear();
-                }));
+                    var prompt = config.Prompt;
+                    var converted = string.Join("_", prompt.Split(' '));
 
-                Upscaler.Upscale(config, images);
+                    var dir = Directory.GetDirectories(WorkingDirectory + @"\stable-diffusion\outputs\" + samples)[0];
+                    var images = Directory.GetFiles(dir, "*.png");
+
+                    if (config.UseGFPGAN)
+                    {
+                        config.GenerateButton.Invoke(new MethodInvoker(delegate ()
+                        {
+                            config.GenerateButton.Text = "Restoring faces and upscaling with GFPGAN...";
+                            config.DebugTextBox.Clear();
+                        }));
+                        FaceRestoration.RestoreWithGFPGAN(config, images);
+                        return;
+                    }
+
+                    config.GenerateButton.Invoke(new MethodInvoker(delegate ()
+                    {
+                        config.GenerateButton.Text = "Upscaling with Video2x...";
+                        config.DebugTextBox.Clear();
+                    }));
+
+                    Upscaler.Upscale(config, images);
+                } 
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "An error occurred", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    
+                }
             };
 
             process.ErrorDataReceived += (s, e) =>
             {
+                Console.WriteLine(e.Data);
+                PrintToDebug(config.DebugTextBox, e.Data);
+
                 if (e.Data == null)
                 {
                     return;
                 }
-                if (e.Data.Contains("PLMS Sampler:"))
+                if (e.Data.Contains("Sampler:") || e.Data.Contains("Decoding image:"))
                 {
                     var percentage = e.Data.Split(':')[1].Split('%')[0].Trim();
                     if (percentage.Length == 0)
@@ -134,6 +170,7 @@ namespace SDToolkit
 
             process.OutputDataReceived += (s, e) =>
             {
+                Console.WriteLine(e.Data);
                 PrintToDebug(config.DebugTextBox, e.Data);
             };
 
@@ -148,13 +185,29 @@ namespace SDToolkit
                     sw.WriteLine("conda\\Scripts\\activate.bat");
                     sw.WriteLine("activate ldm");
                     sw.WriteLine("cd stable-diffusion");
-                    sw.WriteLine("python optimizedSD/optimized_txt2img.py --prompt \"" + config.Prompt + "\""
+                    if (!config.UseContextImage)
+                    {
+                        sw.WriteLine("python optimizedSD/optimized_txt2img.py --prompt \"" + config.Prompt + "\""
+                        + " --sampler " + config.Sampler.ToLower()
                         + " --H " + config.ResHeight
                         + " --W " + config.ResWidth
                         + " --seed " + config.Seed
                         + (config.UseTurbo ? " --turbo" : "")
-                        + (config.Precision == "Full" ? " --precision full" : "")
+                        + " --precision " + config.Precision
                         + " --n_iter 1 --n_samples 8 --ddim_steps " + config.Steps);
+                    } 
+                    else
+                    {
+                        sw.WriteLine("python optimizedSD/optimized_img2img.py --strength 0.8 --prompt \"" + config.Prompt + "\""
+                        + " --init-img " + config.ContextImage
+                        + " --H " + config.ResHeight
+                        + " --W " + config.ResWidth
+                        + " --seed " + config.Seed
+                        + (config.UseTurbo ? " --turbo" : "")
+                        + " --precision " + config.Precision
+                        + " --n_iter 1 --n_samples 8 --ddim_steps " + config.Steps);
+      
+                    }
                 }
             }
         }
