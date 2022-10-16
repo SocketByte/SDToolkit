@@ -185,6 +185,9 @@ namespace SDToolkit
                     sw.WriteLine("conda\\Scripts\\activate.bat");
                     sw.WriteLine("activate ldm");
                     sw.WriteLine("cd stable-diffusion");
+                    sw.WriteLine("pip install -e .");
+                    sw.WriteLine("pip install taming-transformers-rom1504");
+                    sw.WriteLine("pip install clip");
                     if (!config.UseContextImage)
                     {
                         sw.WriteLine("python optimizedSD/optimized_txt2img.py --prompt \"" + config.Prompt + "\""
