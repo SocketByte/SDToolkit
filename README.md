@@ -3,7 +3,7 @@
 All in one, batteries-included software to easily generate and upscale AI art using [Stable Diffusion](https://github.com/CompVis/stable-diffusion)
 
 <div style="padding: 1rem; background-color: #ffad59; border-radius: 1rem; color: black; font-size: 1.15rem;">
-    <p style="padding: 0; margin: 0;"><b>Disclaimer: </b>This software is still in beta, bugs can and will occur at some point. Please use the <i>Issues</i> tab to report a bug. Thank you for using SDToolkit!</p>
+    <p style="padding: 0; margin: 0;"><b>Disclaimer: </b>This software is still in beta, bugs can and will occur at some point. Please use the <i><a href="https://github.com/SocketByte/SDToolkit/issues">Issues</a></i> tab to report a bug. Thank you for using SDToolkit!</p>
 </div>
 <br/>
 
@@ -13,8 +13,8 @@ All in one, batteries-included software to easily generate and upscale AI art us
 ## Features
 
 - No setup required, just install and run
-- Video2x upscaler
-- GFPGAN face restoration
+- <a href="https://github.com/k4yt3x/video2x">Video2x upscaler</a>
+- <a href="https://github.com/TencentARC/GFPGAN">GFPGAN</a> face restoration
 - Ability to choose a context image for AI to try to match
 - Result image viewer with zoom
 - Optimized for low VRAM GPUs
@@ -49,7 +49,7 @@ Half precision is recommended for RTX cards.
 
 ## Installation
 
-Just download and run the setup from the Releases tab. Be reminded that it's a huge file, you should have at least 35GB of free disk space.
+Just download and run the setup from the Releases tab. Be reminded that it's a huge file, you should have at least 35GB of free disk space. Users running the v0.2-beta release, please refer to this <a href="https://github.com/SocketByte/SDToolkit/releases/tag/v0.2-beta1">hotfix</a> for a comprehensive installation.
 
 ## License
 
