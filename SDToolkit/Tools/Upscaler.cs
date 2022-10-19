@@ -12,17 +12,6 @@ namespace SDToolkit
 {
     class Upscaler
     {
-        private static string GetUpscalingAlgorithm(string algorithm)
-        {
-            switch (algorithm)
-            {
-                case "RealSR": return "realsr_ncnn_vulkan";
-                case "SRMD": return "srmd_ncnn_vulkan";
-                case "Waifu2x": return "waifu2x_ncnn_vulkan";
-            }
-            return "realsr_ncnn_vulkan";
-        }
-
         public static void Upscale(Generator.GeneratorConfig config, string[] images)
         {
             var outputNames = new string[images.Length];

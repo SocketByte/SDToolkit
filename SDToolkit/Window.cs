@@ -1,5 +1,7 @@
 ﻿
+using Newtonsoft.Json.Linq;
 using NvAPIWrapper.Display;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,6 +15,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Serialization;
+using static SDToolkit.Window;
 
 namespace SDToolkit
 {
@@ -20,6 +24,8 @@ namespace SDToolkit
     {
         private uint _vram = 0;
         private DateTime _start;
+        private string _latestVersion;
+        
         public Window()
         {
             InitializeComponent();
@@ -240,9 +246,32 @@ namespace SDToolkit
             upscaleLabel.Text = "Final image resolution after upscaling: " + x + " x " + y + ", upscaler: " + upscaler;
         }
 
+        public class App
+        {
+            public string AppVersion { get; set; }
+        }
+
         private void Window_Load(object sender, EventArgs e)
         {
             SetUpscaleInfo();
+            
+            var app = new App();
+            var serializer = new XmlSerializer(typeof(App));
+            using (var reader = new StreamReader("App.xml"))
+            {
+                app = (App)serializer.Deserialize(reader);
+            }
+            Text = "SDToolkit " + app.AppVersion;
+
+            var client = new RestClient("https://api.github.com/repos/SocketByte/SDToolkit/releases");
+            var request = new RestRequest();
+            request.AddHeader("Accept", "application/vnd.github+json");
+            RestResponse response = client.Execute(request);
+            
+            var releases = JArray.Parse(response.Content);
+
+            _latestVersion = releases[0]["tag_name"].ToString().Replace("v", "");
+            
         }
 
         private void upscaleCombo_SelectedIndexChanged(object sender, EventArgs e)
@@ -263,10 +292,32 @@ namespace SDToolkit
         private void useGFPGAN_CheckedChanged(object sender, EventArgs e)
         {
             SetUpscaleInfo();
-  
-  
+        }
+   
+        private void Window_Shown(object sender, EventArgs e)
+        {
+            var app = new App();
+            var serializer = new XmlSerializer(typeof(App));
+            using (var reader = new StreamReader("App.xml"))
+            {
+                app = (App)serializer.Deserialize(reader);
+            }
+            if (_latestVersion != app.AppVersion)
+            {
+                var result = MessageBox.Show("A new version of SDToolkit is available: " + _latestVersion + ". \nDo you want to download the update now?", "New version available", 
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
+
+                if (result.Equals(DialogResult.OK))
+                {
+                    var process = new Process();
+                    process.StartInfo.FileName = "SDToolkitUpdater.exe";
+                    process.Start();
+                    
+                    Environment.Exit(0);
+                }
+            }
         }
     }
-
+    
     
 }

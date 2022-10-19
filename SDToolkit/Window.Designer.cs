@@ -513,8 +513,10 @@ namespace SDToolkit
             this.MaximumSize = new System.Drawing.Size(946, 800);
             this.MinimumSize = new System.Drawing.Size(946, 800);
             this.Name = "Window";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SDToolkit";
             this.Load += new System.EventHandler(this.Window_Load);
+            this.Shown += new System.EventHandler(this.Window_Shown);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox7)).EndInit();
