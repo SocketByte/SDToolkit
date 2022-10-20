@@ -78,7 +78,7 @@ namespace SDToolkit
                         var res = config.ResHeight * scale;
                         
                         var image = images[i];
-                        sw.WriteLine(".\\video2x.exe -i " + image 
+                        sw.WriteLine(".\\video2x.exe -i \"" + image + "\""
                             + " -o outputs\\" + outputNames[i] 
                             + " -h " + res
                             + " -w " + res

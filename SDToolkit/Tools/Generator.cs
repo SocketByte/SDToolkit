@@ -202,7 +202,7 @@ namespace SDToolkit
                     else
                     {
                         sw.WriteLine("python optimizedSD/optimized_img2img.py --strength 0.8 --prompt \"" + config.Prompt + "\""
-                        + " --init-img " + config.ContextImage
+                        + " --init-img \"" + config.ContextImage + "\""
                         + " --H " + config.ResHeight
                         + " --W " + config.ResWidth
                         + " --seed " + config.Seed
